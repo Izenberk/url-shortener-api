@@ -16,7 +16,7 @@ func ResolveURL(c fiber.Ctx) error {
 	value, err := database.DB0.Get(ctx, url).Result()
 	if err == redis.Nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error": "short no found in database",
+			"error": "short no found",
 		})
 	} else if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
