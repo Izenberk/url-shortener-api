@@ -1,8 +1,10 @@
 package helpers
 
 import (
+	"net/url"
 	"os"
 	"strings"
+	"errors"
 )
 
 func EnforceHTTP(url string) string {
@@ -22,4 +24,21 @@ func RemoveDomainError(url string) bool {
 	newURL = strings.Split(newURL, "/")[0]
 
 	return newURL != os.Getenv("DOMAIN")
+}
+
+func ValidateURL(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return errors.New("invalid URL")
+	}
+
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return errors.New("URL must use http or https")
+	}
+
+	if u.Hostname() == "" {
+		return errors.New("URL must include a hostname")
+	}
+
+	return nil
 }

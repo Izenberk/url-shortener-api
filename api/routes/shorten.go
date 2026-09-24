@@ -31,9 +31,17 @@ type response struct {
 // ShortenURL validates a URL, applies rate limiting, and stores a short alias in Redis.
 func ShortenURL(c fiber.Ctx) error {
 	body := new(request)
+
 	if err := c.Bind().Body(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "cannot parse JSON",
+		})
+	}
+
+	// Allow only http and https
+	if err := helpers.ValidateURL(body.URL); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
 		})
 	}
 
@@ -77,6 +85,7 @@ func ShortenURL(c fiber.Ctx) error {
 		}
 	}
 
+	// Validate URL
 	if !govalidator.IsURL(body.URL) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid URL",
