@@ -13,7 +13,7 @@ FROM alpine
 
 RUN adduser -S -D -H -h /app appuser
 
-COPY --from=builder --chown=user:appuser /build/main /app/
+COPY --from=builder --chown=appuser:appuser /build/main /app/
 
 USER appuser
 
