@@ -12,19 +12,29 @@ import (
 
 func TestShortenURLRejectsInvalidRequest(t *testing.T) {
 	tests := []struct {
-		name 			string
-		body			string
-		wantError	string
+		name      string
+		body      string
+		wantError string
 	}{
 		{
-			name:				"malformed JSON",
-			body:				`{"url":`,
-			wantError:	"cannot parse JSON",
+			name:      "malformed JSON",
+			body:      `{"url":`,
+			wantError: "cannot parse JSON",
 		},
 		{
-			name:				"unsupported scheme",
-			body: 			`{"url":"ftp://example.com"}`,
-			wantError: 	"URL must use http or https",
+			name:      "unsupported scheme",
+			body:      `{"url":"ftp://example.com"}`,
+			wantError: "URL must use http or https",
+		},
+		{
+			name:      "custom code too short",
+			body:      `{"url":"https://example.com","short":"ab"}`,
+			wantError: "custom code must be 3–32 characters",
+		},
+		{
+			name:      "custom code contains slash",
+			body:      `{"url":"https://example.com","short":"my/link"}`,
+			wantError: "custom code may contain only letters A-Z, a-z, digits, - and _",
 		},
 	}
 

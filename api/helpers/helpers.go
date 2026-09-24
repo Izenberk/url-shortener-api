@@ -1,10 +1,10 @@
 package helpers
 
 import (
+	"errors"
 	"net/url"
 	"os"
 	"strings"
-	"errors"
 )
 
 func EnforceHTTP(url string) string {
@@ -38,6 +38,30 @@ func ValidateURL(raw string) error {
 
 	if u.Hostname() == "" {
 		return errors.New("URL must include a hostname")
+	}
+
+	return nil
+}
+
+func ValidateCustomCode(code string) error {
+	if code == "" {
+		return nil // nil for now, let fill later
+	}
+
+	if len(code) < 3 || len(code) > 32 {
+		return errors.New("custom code must be 3–32 characters")
+	}
+
+	for _, ch := range code {
+		allowed := (ch >= 'a' && ch <= 'z') ||
+			(ch >= 'A' && ch <= 'Z') ||
+			(ch >= '0' && ch <= '9') ||
+			ch == '-' ||
+			ch == '_'
+
+		if !allowed {
+			return errors.New("custom code may contain only letters A-Z, a-z, digits, - and _")
+		}
 	}
 
 	return nil

@@ -40,7 +40,7 @@ func TestCreateAndResolveURL(t *testing.T) {
 		t.Fatalf("connect to test Redis on port 6380: %v", err)
 	}
 
-	code := "test-" + uuid.NewString()
+	code := "test-" + uuid.NewString()[:8]
 	target := "https://example.com/article"
 	var clientIP string
 

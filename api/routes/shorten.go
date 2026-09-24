@@ -15,17 +15,17 @@ import (
 )
 
 type request struct {
-	URL					string 				`json:"url"`
-	CustomShort	string				`json:"short"`
-	Expiry			time.Duration	`json:"expiry"`
+	URL         string        `json:"url"`
+	CustomShort string        `json:"short"`
+	Expiry      time.Duration `json:"expiry"`
 }
 
 type response struct {
-	URL							string				`json:"url"`
-	CustomShort			string 				`json:"short"`
-	Expiry					time.Duration	`json:"expiry"`
-	XRateRemaining	int 					`json:"rate_limit"`
-	XRateLimitReset	time.Duration	`json:"rate_limit_reset"`
+	URL             string        `json:"url"`
+	CustomShort     string        `json:"short"`
+	Expiry          time.Duration `json:"expiry"`
+	XRateRemaining  int           `json:"rate_limit"`
+	XRateLimitReset time.Duration `json:"rate_limit_reset"`
 }
 
 // ShortenURL validates a URL, applies rate limiting, and stores a short alias in Redis.
@@ -40,6 +40,12 @@ func ShortenURL(c fiber.Ctx) error {
 
 	// Allow only http and https
 	if err := helpers.ValidateURL(body.URL); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	if err := helpers.ValidateCustomCode(body.CustomShort); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -79,7 +85,7 @@ func ShortenURL(c fiber.Ctx) error {
 				})
 			}
 			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
-				"error": "Rate limit exceeded",
+				"error":            "Rate limit exceeded",
 				"rate_limit_reset": limit / time.Nanosecond / time.Minute,
 			})
 		}
@@ -129,11 +135,11 @@ func ShortenURL(c fiber.Ctx) error {
 	}
 
 	resp := response{
-		URL:							body.URL,
-		CustomShort: 			"",
-		Expiry:  					body.Expiry,
-		XRateRemaining: 	10,
-		XRateLimitReset: 	30,
+		URL:             body.URL,
+		CustomShort:     "",
+		Expiry:          body.Expiry,
+		XRateRemaining:  10,
+		XRateLimitReset: 30,
 	}
 
 	if err = database.DB1.Decr(ctx, c.IP()).Err(); err != nil {
