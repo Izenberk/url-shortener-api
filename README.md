@@ -206,10 +206,11 @@ docker compose --profile test rm -f redis-test
 | `main.go` | App setup and route registration. |
 | `docs.go`, `docs/` | Embedded Swagger UI, OpenAPI delivery, and vendor assets. |
 | `docs_test.go` | Documentation routing and embedded asset tests. |
-| `api/helpers/` | Validation and helper unit tests. |
-| `api/routes/shorten.go` | Creation, quota checks, and atomic storage. |
-| `api/routes/resolve.go` | Lookup and redirect. |
-| `api/routes/*_test.go` | Handler and integration tests. |
+| `internal/validation/` | Request validation and unit tests. |
+| `internal/handlers/shorten.go` | Creation, quota checks, and atomic storage. |
+| `internal/handlers/resolve.go` | Lookup and redirect. |
+| `internal/handlers/url.go` | URL formatting used by the creation handler. |
+| `internal/handlers/*_test.go` | Handler and integration tests. |
 | `internal/database/` | Redis clients and startup connection checks. |
 | `Dockerfile` | Multi-stage API image build. |
 | `docker-compose.yml` | API, application Redis, and optional test Redis. |

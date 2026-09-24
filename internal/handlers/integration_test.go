@@ -1,6 +1,6 @@
 //go:build integration
 
-package routes
+package handlers
 
 import (
 	"context"

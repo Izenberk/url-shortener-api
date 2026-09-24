@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/Izenberk/url-shortener-api/api/routes"
 	"github.com/Izenberk/url-shortener-api/internal/database"
+	"github.com/Izenberk/url-shortener-api/internal/handlers"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/logger"
@@ -15,8 +15,8 @@ import (
 func setupRoutes(app *fiber.App) {
 	// Register documentation before the dynamic short-code route.
 	setupDocs(app)
-	app.Get("/:url", routes.ResolveURL)
-	app.Post("/api/v1", routes.ShortenURL)
+	app.Get("/:url", handlers.ResolveURL)
+	app.Post("/api/v1", handlers.ShortenURL)
 }
 
 func main() {

@@ -1,4 +1,4 @@
-package routes
+package handlers
 
 import (
 	"log"
@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Izenberk/url-shortener-api/api/helpers"
 	"github.com/Izenberk/url-shortener-api/internal/database"
+	"github.com/Izenberk/url-shortener-api/internal/validation"
 	"github.com/asaskevich/govalidator"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -39,19 +39,19 @@ func ShortenURL(c fiber.Ctx) error {
 	}
 
 	// Allow only http and https
-	if err := helpers.ValidateURL(body.URL); err != nil {
+	if err := validation.ValidateURL(body.URL); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	if err := helpers.ValidateCustomCode(body.CustomShort); err != nil {
+	if err := validation.ValidateCustomCode(body.CustomShort); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 
-	if err := helpers.ValidateExpiry(body.Expiry); err != nil {
+	if err := validation.ValidateExpiry(body.Expiry); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
 		})
@@ -104,13 +104,13 @@ func ShortenURL(c fiber.Ctx) error {
 		})
 	}
 
-	if !helpers.RemoveDomainError(body.URL) {
+	if !validation.RemoveDomainError(body.URL) {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
 			"error": "haha... nice try",
 		})
 	}
 
-	body.URL = helpers.EnforceHTTP(body.URL)
+	body.URL = enforceHTTP(body.URL)
 
 	if body.Expiry == 0 {
 		body.Expiry = 24
@@ -183,6 +183,6 @@ func ShortenURL(c fiber.Ctx) error {
 		resp.XRateLimitReset = ttl / time.Nanosecond / time.Minute
 	}
 
-	resp.CustomShort = helpers.EnforceHTTP(os.Getenv("DOMAIN") + "/" + id)
+	resp.CustomShort = enforceHTTP(os.Getenv("DOMAIN") + "/" + id)
 	return c.Status(fiber.StatusOK).JSON(resp)
 }
