@@ -1,3 +1,6 @@
 .env
 vendor/
 stoyle
+
+# Include embedded Swagger UI assets.
+!docs/vendor/

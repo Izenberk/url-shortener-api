@@ -17,6 +17,11 @@ func TestShortenURLRejectsInvalidRequest(t *testing.T) {
 		wantError string
 	}{
 		{
+			name:      "reserved documentation code",
+			body:      `{"url":"https://example.com","short":"DoCs"}`,
+			wantError: "custom code is reserved",
+		},
+		{
 			name:      "malformed JSON",
 			body:      `{"url":`,
 			wantError: "cannot parse JSON",

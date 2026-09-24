@@ -49,6 +49,10 @@ func ValidateCustomCode(code string) error {
 		return nil // nil for now, let fill later
 	}
 
+	if strings.EqualFold(code, "docs") {
+		return errors.New("custom code is reserved")
+	}
+
 	if len(code) < 3 || len(code) > 32 {
 		return errors.New("custom code must be 3–32 characters")
 	}

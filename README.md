@@ -83,6 +83,26 @@ go run .
 
 Stop any existing Compose API with `docker compose stop api` before binding port 3000. Restore `DB_ADDR=redis:6379` before returning to the Dockerized API.
 
+## OpenAPI documentation
+
+The machine-readable API contract is [openapi.yaml](openapi.yaml), using OpenAPI 3.0.3. It covers both endpoints, validation rules, defaults, examples, current error messages, and the redirect Location header. No authentication is required.
+
+After starting the backend, open **http://localhost:3000/docs** for Swagger UI. The specification is also served at **http://localhost:3000/docs/openapi.yaml**. Expand an endpoint, choose **Try it out**, edit the request, and select **Execute**. The spec defaults to `http://localhost:3000`; update its server URL if your API uses another address.
+
+The UI assets (Swagger UI 5.33.0), initializer, and OpenAPI file are embedded in the Go binary. No CDN or Node.js runtime is needed to view the docs, and the existing Dockerfile works unchanged. Rebuild after editing the spec or documentation assets:
+
+```bash
+docker compose up -d --build api
+```
+
+Documentation routes are registered before `/:url`. The custom code `docs` is reserved case-insensitively and returns `400` on creation; `docs-link` remains valid. If an older database already contains a code named `docs`, its URL is now occupied by the documentation page; existing data is not automatically changed. There is no `/swagger` alias.
+
+Vendor versions and license files are in `docs/vendor/`. Documentation tests verify HTML, static assets, and the served embedded spec without initializing Redis. You can still import `openapi.yaml` into an external OpenAPI viewer.
+
+Creating links from a viewer writes real data and consumes quota. To inspect a redirect response, use `curl -i` without `-L`; interactive clients may follow the redirect automatically.
+
+Keep the spec updated whenever handlers, validation, or response shapes change. `info.version` is the documentation contract version, not the Fiber or Go version. This file describes current behavior, including `503` quota errors and the existing `404` message.
+
 ## API reference
 
 ### POST /api/v1
@@ -90,7 +110,7 @@ Stop any existing Compose API with `docker compose stop api` before binding port
 | JSON field | Type | Rules |
 | --- | --- | --- |
 | `url` | string | Required HTTP/HTTPS URL with hostname; also checked by `govalidator.IsURL`. |
-| `short` | string | Optional; empty means generated. Custom codes are case-sensitive, 3–32 ASCII letters, digits, `-`, or `_`. |
+| `short` | string | Optional; empty means generated. Custom codes are case-sensitive, 3–32 ASCII letters, digits, `-`, or `_`; `docs` is reserved in all letter cases. |
 | `expiry` | integer | Hours. Omitted or `0` means 24 hours; otherwise 1–720. |
 
 ```bash
@@ -184,6 +204,8 @@ docker compose --profile test rm -f redis-test
 | Path | Responsibility |
 | --- | --- |
 | `main.go` | App setup and route registration. |
+| `docs.go`, `docs/` | Embedded Swagger UI, OpenAPI delivery, and vendor assets. |
+| `docs_test.go` | Documentation routing and embedded asset tests. |
 | `api/helpers/` | Validation and helper unit tests. |
 | `api/routes/shorten.go` | Creation, quota checks, and atomic storage. |
 | `api/routes/resolve.go` | Lookup and redirect. |

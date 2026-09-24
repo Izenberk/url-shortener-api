@@ -45,6 +45,9 @@ func TestValidateCustomCode(t *testing.T) {
 	}{
 		{"empty means generate", "", false},
 		{"minimum length", "abc", false},
+		{"reserved documentation code", "docs", true},
+		{"reserved code case variant", "DoCs", true},
+		{"documentation prefix allowed", "docs-link", false},
 		{"allowed characters", "My-link_123", false},
 		{"maximum length", strings.Repeat("a", 32), false},
 		{"too short", "ab", true},
