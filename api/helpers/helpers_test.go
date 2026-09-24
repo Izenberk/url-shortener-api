@@ -3,6 +3,7 @@ package helpers
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestValidateURL(t *testing.T) {
@@ -60,6 +61,34 @@ func TestValidateCustomCode(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf(
 					"ValidateCustomCode(%q) error = %v; wantErr = %v",
+					tt.input, err, tt.wantErr,
+				)
+			}
+		})
+	}
+}
+
+func TestValidateExpiry(t *testing.T) {
+	tests := []struct {
+		name    string
+		input   time.Duration
+		wantErr bool
+	}{
+		{"default", 0, false},
+		{"minimum", 1, false},
+		{"normal", 24, false},
+		{"maximum", 720, false},
+		{"negative", -1, true},
+		{"above maximum", 721, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateExpiry(tt.input)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf(
+					"ValidateExpiry(%v) error = %v; wantErr = %v",
 					tt.input, err, tt.wantErr,
 				)
 			}

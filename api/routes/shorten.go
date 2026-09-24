@@ -51,6 +51,12 @@ func ShortenURL(c fiber.Ctx) error {
 		})
 	}
 
+	if err := helpers.ValidateExpiry(body.Expiry); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
 	ctx := c.Context()
 
 	// Rate limiting: each IP gets API_QUOTA calls per 30 minutes.

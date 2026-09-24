@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 func EnforceHTTP(url string) string {
@@ -62,6 +63,14 @@ func ValidateCustomCode(code string) error {
 		if !allowed {
 			return errors.New("custom code may contain only letters A-Z, a-z, digits, - and _")
 		}
+	}
+
+	return nil
+}
+
+func ValidateExpiry(hours time.Duration) error {
+	if hours < 0 || hours > 720 {
+		return errors.New("expiry must be 0 or between 1 and 720 hours")
 	}
 
 	return nil

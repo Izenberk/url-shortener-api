@@ -36,6 +36,16 @@ func TestShortenURLRejectsInvalidRequest(t *testing.T) {
 			body:      `{"url":"https://example.com","short":"my/link"}`,
 			wantError: "custom code may contain only letters A-Z, a-z, digits, - and _",
 		},
+		{
+			name:      "negative expiry",
+			body:      `{"url":"https://example.com","expiry":-1}`,
+			wantError: "expiry must be 0 or between 1 and 720 hours",
+		},
+		{
+			name:      "expiry above maximum",
+			body:      `{"url":"https://example.com","expiry":721}`,
+			wantError: "expiry must be 0 or between 1 and 720 hours",
+		},
 	}
 
 	for _, tt := range tests {
