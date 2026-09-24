@@ -5,6 +5,8 @@ window.addEventListener('DOMContentLoaded', () => {
     deepLinking: true,
     validatorUrl: null,
     supportedSubmitMethods: ['get', 'post'],
-    displayRequestDuration: true,
+    docExpansion: 'list',
+    defaultModelsExpandDepth: -1,
+    defaultModelRendering: 'model',
   });
 });

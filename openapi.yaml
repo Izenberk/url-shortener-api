@@ -2,48 +2,23 @@ openapi: 3.0.3
 info:
   title: URL Shortener API
   version: 1.0.0
-  description: |
-    API contract for the current Go/Fiber learning project. No authentication is required.
-
-    Create short links with optional custom codes and an expiry in whole hours.
-    Redis stores each code and destination with a TTL. Code creation uses SetNX
-    to avoid overwriting an existing mapping; generated-code collisions are
-    retried up to five attempts.
-
-    Quotas are configured per IP with API_QUOTA and a 30-minute window. The
-    current implementation returns 503 (not 429) when the quota is exhausted.
-    Quota checks and decrements are not atomic under concurrent requests.
-
-    DOMAIN configures the base URL returned in short links. The localhost server
-    below is for local development. Changing this spec does not configure the API.
-  contact:
-    name: Project repository
-    url: https://github.com/Izenberk/url-shortener-api
+  description: Create short links with optional custom codes and expiry. No authentication required.
 servers:
   - url: http://localhost:3000
     description: Local development API
 security: []
 tags:
   - name: Links
-    description: Create short links and resolve their destinations.
-externalDocs:
-  description: Backend setup, tests, and current limitations
-  url: https://github.com/Izenberk/url-shortener-api#readme
 paths:
   /api/v1:
     post:
-      tags: [Links]
+      tags:
+        - Links
       operationId: createShortLink
       summary: Create a short URL
-      description: |
-        Send a JSON object. Empty or omitted short generates a six-character code.
-        Omitted expiry or 0 uses a 24-hour lifetime. Positive expiry is in whole
-        hours, up to 720. Code matching is case-sensitive. The code docs is reserved in all letter cases for the documentation route.
-
-        A custom-code conflict returns 409 without updating the existing URL or
-        expiration. This operation is not idempotent: repeated requests without
-        a custom code can create multiple links. A client timeout does not prove
-        that the server failed to create the link.
+      description: >-
+        Send JSON. Use the returned short URL as the link href. Avoid automatically retrying
+        creation requests: each request may create a new link.
       requestBody:
         required: true
         content:
@@ -61,15 +36,9 @@ paths:
                   url: https://example.com/article
                   short: my-link
                   expiry: 1
-              explicitDefaults:
-                summary: Empty code and zero expiry use defaults
-                value:
-                  url: https://example.com/article
-                  short: ''
-                  expiry: 0
       responses:
         '200':
-          description: Link created successfully. Quota fields vary with current state.
+          description: Link created. Use short for the link and expiry for its lifetime in hours.
           content:
             application/json:
               schema:
@@ -81,93 +50,50 @@ paths:
                 rate_limit: 9
                 rate_limit_reset: 29
         '400':
-          description: Invalid JSON, field types, or input validation failure.
+          description: Invalid input. Display the error message next to the form.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                invalidBody:
-                  value: {error: 'cannot parse JSON'}
-                malformedUrl:
-                  value: {error: 'invalid URL'}
-                unsupportedScheme:
-                  value: {error: 'URL must use http or https'}
-                missingHostname:
-                  value: {error: 'URL must include a hostname'}
-                validatorRejectedUrl:
-                  value: {error: 'Invalid URL'}
-                reservedCode:
-                  value: {error: 'custom code is reserved'}
-                invalidCodeLength:
-                  value: {error: 'custom code must be 3–32 characters'}
-                invalidCodeCharacters:
-                  value: {error: 'custom code may contain only letters A-Z, a-z, digits, - and _'}
-                invalidExpiry:
-                  value: {error: 'expiry must be 0 or between 1 and 720 hours'}
+              example:
+                error: custom code must be 3–32 characters
         '409':
-          description: The requested custom code already exists. Its data is preserved.
+          description: Custom code is already taken. Ask the user to choose another.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example: {error: 'URL short already in use'}
+              example:
+                error: URL short already in use
         '500':
-          description: Redis access failed or stored quota data could not be processed.
+          description: Server error. Show a failure message.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                databaseFailure:
-                  value: {error: 'cannot connect to DB'}
-                quotaReadFailure:
-                  value: {error: 'cannot read rate limit from DB'}
-                invalidQuota:
-                  value: {error: 'invalid rate limit value in DB'}
-                quotaTtlFailure:
-                  value: {error: 'cannot read rate limit TTL from DB'}
-                storageFailure:
-                  value: {error: 'Unable to connect to server'}
+              example:
+                error: cannot connect to DB
         '503':
-          description: |
-            Quota exhausted, generated-code attempts exhausted, or rejection by
-            the current self-domain helper. The self-domain helper is a string
-            comparison and is not a comprehensive loop-prevention mechanism.
-            Only quota errors include rate_limit_reset. No Retry-After header
-            is currently emitted.
+          description: >-
+            Request rejected or temporarily unavailable. For quota errors, rate_limit_reset is the
+            wait in minutes.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                quotaExceeded:
-                  value:
-                    error: Rate limit exceeded
-                    rate_limit_reset: 29
-                exhaustedAttempts:
-                  value: {error: 'Unable to generate a unique short code'}
-                selfDomainRejected:
-                  value: {error: 'haha... nice try'}
+              example:
+                error: Rate limit exceeded
+                rate_limit_reset: 29
   /{code}:
     get:
-      tags: [Links]
+      tags:
+        - Links
       operationId: resolveShortLink
       summary: Redirect to a short link's destination
-      description: |
-        Looks up the case-sensitive code in Redis. This path parameter is named
-        code in the documentation; the Fiber route uses /:url internally.
-        Lookup does not run creation-time custom-code validation. The /docs route
-        takes precedence and serves documentation instead of a short-link lookup.
-
-        A missing or expired mapping returns 404. An existing mapping returns
-        301 with a Location header and increments a shared redirect counter.
-        Counter-update failures are logged and do not prevent the redirect.
-
-        Clients may cache 301 redirects and bypass future API lookups even after
-        the Redis key expires. Use normal browser navigation to follow links.
-        Documentation tools may automatically follow the redirect or encounter
-        destination CORS restrictions; curl -i without -L exposes the API response.
+      description: >-
+        Open the short URL using an <a> link or browser navigation. Returns a 302 redirect with
+        Cache-Control: no-store; missing or expired links return 404. Swagger may report a CORS
+        error when following a redirect to another website.
       parameters:
         - name: code
           in: path
@@ -178,8 +104,8 @@ paths:
             minLength: 1
           example: my-link
       responses:
-        '301':
-          description: Redirect to the stored destination; no JSON success body is promised.
+        '302':
+          description: Redirects to the destination in the Location header. No JSON body.
           headers:
             Location:
               description: Destination URL stored for this code.
@@ -188,41 +114,51 @@ paths:
                 type: string
                 format: uri
               example: https://example.com/article
+            Cache-Control:
+              description: Prevents storage of the redirect response.
+              required: true
+              schema:
+                type: string
+                enum:
+                  - no-store
+              example: no-store
         '404':
           description: No mapping exists for this code, or the mapping has expired.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example: {error: 'short no found'}
+              example:
+                error: short no found
         '500':
-          description: Redis destination lookup failed.
+          description: Server error.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example: {error: 'cannot connect to DB'}
+              example:
+                error: cannot connect to DB
 components:
   schemas:
     CreateLinkRequest:
       type: object
-      required: [url]
+      required:
+        - url
       properties:
         url:
           type: string
           format: uri
-          pattern: '^https?://'
-          description: |
-            Complete HTTP/HTTPS destination with a hostname. The server also
-            parses the URL and checks govalidator.IsURL; matching the pattern
-            alone does not guarantee acceptance. The destination is not fetched.
+          pattern: ^https?://
+          description: Required. Complete URL starting with http:// or https:// and a hostname.
           example: https://example.com/article
         short:
           type: string
           maxLength: 32
-          pattern: '^(?![dD][oO][cC][sS]$)([A-Za-z0-9_-]{3,32})?$'
+          pattern: ^(?![dD][oO][cC][sS]$)([A-Za-z0-9_-]{3,32})?$
           default: ''
-          description: Empty or omitted generates a code; otherwise use 3–32 allowed ASCII characters. The code docs is reserved case-insensitively.
+          description: >-
+            Optional. Blank generates a code. Otherwise 3–32 letters A–Z, a–z, digits, - or _.
+            Case-sensitive; docs is reserved in any letter case.
           example: my-link
         expiry:
           type: integer
@@ -230,11 +166,16 @@ components:
           minimum: 0
           maximum: 720
           default: 24
-          description: Whole hours. Omitted or 0 uses 24 hours, not unlimited storage.
+          description: Optional. Lifetime in whole hours, 1–720. Omitted or 0 defaults to 24.
           example: 24
     CreateLinkResponse:
       type: object
-      required: [url, short, expiry, rate_limit, rate_limit_reset]
+      required:
+        - url
+        - short
+        - expiry
+        - rate_limit
+        - rate_limit_reset
       properties:
         url:
           type: string
@@ -242,7 +183,7 @@ components:
           description: Destination URL stored by the API.
         short:
           type: string
-          description: Full short URL formed from DOMAIN and the code, not just the code.
+          description: Complete short URL. Use directly as href or copy to clipboard.
           example: http://localhost:3000/my-link
         expiry:
           type: integer
@@ -252,22 +193,19 @@ components:
           description: Configured lifetime in hours from creation, not a live remaining-time value.
         rate_limit:
           type: integer
-          description: |
-            Remaining quota as reported by Redis. This is not constrained to
-            nonnegative values because the current quota implementation is not
-            atomic. The handler may return its fallback value if a post-save
-            quota read fails.
+          description: Reported remaining creation quota.
         rate_limit_reset:
           type: integer
           format: int64
-          description: Remaining quota-window time in whole minutes; may use a fallback on read failure.
+          description: Minutes until the creation quota resets.
     ErrorResponse:
       type: object
-      required: [error]
+      required:
+        - error
       properties:
         error:
           type: string
-          description: Human-readable error message from the current handler.
+          description: Message to display when the request fails.
         rate_limit_reset:
           type: integer
           format: int64

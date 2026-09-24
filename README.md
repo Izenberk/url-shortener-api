@@ -11,7 +11,7 @@ A learning project built with Go, Fiber v3, and Redis. Create short links with o
 
 ```text
 React frontend → POST /api/v1 → Fiber → Redis
-Browser → GET /:url → Fiber → Redis lookup → 301 redirect
+Browser → GET /:url → Fiber → Redis lookup → 302 redirect
 ```
 
 - Validate HTTP/HTTPS URLs, custom codes, and expiry values.
@@ -145,12 +145,12 @@ Repeating the same custom code while it exists returns `409`:
 curl -i http://localhost:3000/my-link
 ```
 
-An existing code returns `301` with the destination in `Location`. Unknown or expired codes return `404` with the current message `{"error":"short no found"}`.
+An existing code returns `302` with the destination in `Location` and `Cache-Control: no-store`. Unknown or expired codes return `404` with the current message `{"error":"short no found"}`.
 
 | Status | Current behavior |
 | --- | --- |
 | `200` | Link created. |
-| `301` | Redirect. |
+| `302` | Redirect. |
 | `400` | Invalid JSON or validation failure. |
 | `404` | Unknown or expired code. |
 | `409` | Custom code already exists. |
@@ -229,7 +229,7 @@ docker compose --profile test rm -f redis-test
 
 - No accounts, link ownership, management dashboard, or deployment setup.
 - Localhost links only work on the device running the API.
-- Redis mappings expire, but browsers may cache `301` redirects and bypass later API lookups. Strict browser-visible expiry needs a reviewed redirect/cache policy.
+- Redirects use `302` with `Cache-Control: no-store` so clients check the API again. Previously cached `301` redirects may require clearing the browser cache or testing a new code.
 - Link storage is atomic; quota read/check/decrement operations are not yet atomic under concurrency.
 - The redirect counter is shared, not per-link analytics.
 - CORS uses Fiber defaults for development. Configuration validation, self-domain normalization, persistence policy, and production deployment remain follow-ups.

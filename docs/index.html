@@ -11,6 +11,8 @@
       .docs-intro { padding: 20px max(20px, calc((100% - 1420px) / 2)); background: #172033; color: #fff; font: 15px/1.6 system-ui, sans-serif; }
       .docs-intro p { margin: 4px 0; }
       .docs-intro a { color: #c7d2fe; }
+      .docs-footer { padding: 20px; font: 12px/1.5 system-ui, sans-serif; color: #555; }
+      .docs-footer a { color: #555; }
       .docs-intro h1 { margin: 0 0 8px; font-size: 22px; }
     </style>
     <script src="/docs/swagger-ui-bundle.js" defer></script>
@@ -18,13 +20,13 @@
   </head>
   <body>
     <header class="docs-intro">
-      <h1>URL Shortener API documentation</h1>
       <p><a href="/docs/openapi.yaml" download="openapi.yaml">Download OpenAPI specification</a></p>
-      <p>Try it out sends real API requests: creating links saves data and consumes quota.</p>
-      <p>Redirect requests may follow the destination automatically. Use <code>curl -i</code> without <code>-L</code> to inspect the 301 response.</p>
-      <p>Swagger UI 5.33.0 · <a href="/docs/licenses/LICENSE">License</a> · <a href="/docs/licenses/NOTICE">Notice</a> · <a href="/docs/licenses/bundle">Third-party licenses</a></p>
+      <p>Try it out creates real links and uses your quota.</p>
     </header>
     <main id="swagger-ui"></main>
+    <footer class="docs-footer">
+      <p>Swagger UI 5.33.0 · <a href="/docs/licenses/LICENSE">License</a> · <a href="/docs/licenses/NOTICE">Notice</a> · <a href="/docs/licenses/bundle">Third-party licenses</a></p>
+    </footer>
     <noscript>Enable JavaScript to view Swagger UI, or download the OpenAPI specification above.</noscript>
   </body>
 </html>

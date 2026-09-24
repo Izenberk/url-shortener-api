@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
-	"sync"
 
 	"github.com/Izenberk/url-shortener-api/internal/database"
 	"github.com/gofiber/fiber/v3"
@@ -215,9 +215,12 @@ func TestCreateAndResolveURL(t *testing.T) {
 	}
 	defer redirectResp.Body.Close()
 
-	// match ResolveURL response 301
-	if redirectResp.StatusCode != http.StatusMovedPermanently {
-		t.Errorf("GET status = %d; want 301", redirectResp.StatusCode)
+	// Verify the temporary redirect and prevent caching.
+	if redirectResp.StatusCode != http.StatusFound {
+		t.Errorf("GET status = %d; want 302", redirectResp.StatusCode)
+	}
+	if cacheControl := redirectResp.Header.Get("Cache-Control"); cacheControl != "no-store" {
+		t.Errorf("Cache-Control = %q; want no-store", cacheControl)
 	}
 	if location := redirectResp.Header.Get("Location"); location != target {
 		t.Errorf("Location = %q; want %q", location, target)

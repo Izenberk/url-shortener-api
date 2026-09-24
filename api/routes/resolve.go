@@ -4,8 +4,8 @@ import (
 	"log"
 
 	"github.com/Izenberk/url-shortener-api/internal/database"
-	"github.com/redis/go-redis/v9"
 	"github.com/gofiber/fiber/v3"
+	"github.com/redis/go-redis/v9"
 )
 
 // ResolveURL resolves a short URL to its original and redirects the client.
@@ -28,5 +28,6 @@ func ResolveURL(c fiber.Ctx) error {
 		log.Printf("warn: failed to increment redirect counter: %v", err)
 	}
 
-	return c.Redirect().Status(301).To(value)
+	c.Set("Cache-Control", "no-store")
+	return c.Redirect().Status(fiber.StatusFound).To(value)
 }
