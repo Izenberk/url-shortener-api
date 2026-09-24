@@ -112,31 +112,48 @@ func ShortenURL(c fiber.Ctx) error {
 
 	body.URL = helpers.EnforceHTTP(body.URL)
 
-	var id string
-	if body.CustomShort == "" {
-		id = uuid.New().String()[:6]
-	} else {
-		id = body.CustomShort
-	}
-
-	existing, getErr := database.DB0.Get(ctx, id).Result()
-	if getErr != nil && getErr != redis.Nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "cannot connect to DB",
-		})
-	}
-	if existing != "" {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error": "URL short already in use",
-		})
-	}
-
 	if body.Expiry == 0 {
 		body.Expiry = 24
 	}
-	if err = database.DB0.Set(ctx, id, body.URL, body.Expiry*3600*time.Second).Err(); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Unable to connect to server",
+
+	ttl := body.Expiry * time.Hour
+
+	const maxAttempts = 5
+	var id string
+	created := false
+
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		id = body.CustomShort
+		if id == "" {
+			id = uuid.NewString()[:6]
+		}
+
+		var saveErr error
+		created, saveErr = database.DB0.SetNX(
+			ctx, id, body.URL, ttl,
+		).Result()
+
+		if saveErr != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Unable to connect to server",
+			})
+		}
+
+		if created {
+			break
+		}
+
+		if body.CustomShort != "" {
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+				"error": "URL short already in use",
+			})
+		}
+
+	}
+
+	if !created {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error": "Unable to generate a unique short code",
 		})
 	}
 
