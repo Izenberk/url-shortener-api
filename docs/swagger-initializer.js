@@ -7,6 +7,6 @@ window.addEventListener('DOMContentLoaded', () => {
     supportedSubmitMethods: ['get', 'post'],
     docExpansion: 'list',
     defaultModelsExpandDepth: -1,
-    defaultModelRendering: 'model',
+    defaultModelRendering: 'example',
   });
 });
